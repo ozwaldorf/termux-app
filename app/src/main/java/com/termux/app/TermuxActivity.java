@@ -639,10 +639,20 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
                 // Apply blur effect using RenderEffect (API 31+)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    float radius = Math.min(blurRadius, 25f); // RenderEffect max is ~25
-                    RenderEffect blurEffect = RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP);
+                    // RenderEffect caps at ~25px per pass, so chain multiple passes
+                    // to reach the full requested radius (up to 150, matching system blur)
+                    float remaining = (float) blurRadius;
+                    RenderEffect blurEffect = null;
+                    int passes = 0;
+                    while (remaining > 0) {
+                        float r = Math.min(remaining, 25f);
+                        RenderEffect pass = RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP);
+                        blurEffect = (blurEffect == null) ? pass : RenderEffect.createChainEffect(pass, blurEffect);
+                        remaining -= r;
+                        passes++;
+                    }
                     blurView.setRenderEffect(blurEffect);
-                    Logger.logDebug(LOG_TAG, "Wallpaper blur fallback enabled with radius=" + radius);
+                    Logger.logDebug(LOG_TAG, "Wallpaper blur fallback enabled with radius=" + blurRadius + " (" + passes + " passes)");
                 } else {
                     // On older APIs, just show wallpaper without blur
                     Logger.logDebug(LOG_TAG, "Wallpaper shown without blur (API < 31)");
