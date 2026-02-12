@@ -26,8 +26,15 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+import android.graphics.Matrix;
+import android.graphics.Point;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
+import android.graphics.drawable.Drawable;
+import android.app.WallpaperManager;
 
 import com.termux.R;
 import com.termux.app.api.file.FileReceiverActivity;
@@ -249,6 +256,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mProperties.isUsingFullScreen()) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
+
+        setWindowTransparencyAndBlur();
 
         setTermuxTerminalViewAndClients();
 
@@ -537,6 +546,196 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         float[] padding = mProperties.getTerminalPadding();
         if (padding != null && padding.length == 2) {
             mTerminalView.setTerminalPadding(padding[0], padding[1]);
+        }
+    }
+
+    private void setWindowTransparencyAndBlur() {
+        int opacity = mProperties.getBackgroundOpacity();
+        int blurRadius = mProperties.getBackgroundBlurRadius();
+
+        Logger.logDebug(LOG_TAG, "setWindowTransparencyAndBlur: opacity=" + opacity + ", blurRadius=" + blurRadius + ", API=" + Build.VERSION.SDK_INT);
+
+        ImageView blurView = findViewById(R.id.background_blur_view);
+
+        if (opacity < 100) {
+            // Enable window transparency
+            getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
+            getWindow().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadius > 0) {
+                boolean blurEnabled = getWindowManager().isCrossWindowBlurEnabled();
+                Logger.logDebug(LOG_TAG, "isCrossWindowBlurEnabled=" + blurEnabled);
+
+                View colorOverlay = findViewById(R.id.background_color_overlay);
+
+                if (blurEnabled) {
+                    // System blur is available - use it and hide fallback views
+                    getWindow().setBackgroundBlurRadius(blurRadius);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+                    WindowManager.LayoutParams params = getWindow().getAttributes();
+                    params.setBlurBehindRadius(blurRadius);
+                    getWindow().setAttributes(params);
+
+                    if (blurView != null) {
+                        blurView.setVisibility(View.GONE);
+                    }
+                    if (colorOverlay != null) {
+                        colorOverlay.setVisibility(View.GONE);
+                    }
+
+                    Logger.logDebug(LOG_TAG, "Using system blur with radius=" + blurRadius);
+                } else {
+                    // System blur unavailable - use wallpaper blur fallback
+                    setupWallpaperBlurFallback(blurView, colorOverlay, blurRadius, opacity);
+                }
+            } else if (blurRadius > 0) {
+                // Pre-Android 12 with blur requested - use fallback
+                View colorOverlay = findViewById(R.id.background_color_overlay);
+                setupWallpaperBlurFallback(blurView, colorOverlay, blurRadius, opacity);
+            } else {
+                // No blur requested
+                if (blurView != null) {
+                    blurView.setVisibility(View.GONE);
+                }
+                View colorOverlay = findViewById(R.id.background_color_overlay);
+                if (colorOverlay != null) {
+                    colorOverlay.setVisibility(View.GONE);
+                }
+            }
+        } else {
+            // Fully opaque - disable blur and restore solid background
+            getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK));
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
+            if (blurView != null) {
+                blurView.setVisibility(View.GONE);
+            }
+            View colorOverlay = findViewById(R.id.background_color_overlay);
+            if (colorOverlay != null) {
+                colorOverlay.setVisibility(View.GONE);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                getWindow().setBackgroundBlurRadius(0);
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+            }
+        }
+    }
+
+    private void setupWallpaperBlurFallback(ImageView blurView, View colorOverlay, int blurRadius, int opacity) {
+        if (blurView == null) {
+            Logger.logError(LOG_TAG, "blurView is null, cannot setup wallpaper blur fallback");
+            return;
+        }
+
+        try {
+            // Get wallpaper drawable
+            WallpaperManager wallpaperManager = WallpaperManager.getInstance(this);
+            Drawable wallpaperDrawable = wallpaperManager.getDrawable();
+
+            if (wallpaperDrawable != null) {
+                blurView.setImageDrawable(wallpaperDrawable);
+                blurView.setScaleType(ImageView.ScaleType.MATRIX);
+                blurView.setVisibility(View.VISIBLE);
+
+                // Apply blur effect using RenderEffect (API 31+)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    float radius = Math.min(blurRadius, 25f); // RenderEffect max is ~25
+                    RenderEffect blurEffect = RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP);
+                    blurView.setRenderEffect(blurEffect);
+                    Logger.logDebug(LOG_TAG, "Wallpaper blur fallback enabled with radius=" + radius);
+                } else {
+                    // On older APIs, just show wallpaper without blur
+                    Logger.logDebug(LOG_TAG, "Wallpaper shown without blur (API < 31)");
+                }
+
+                // Apply background color overlay with opacity
+                if (colorOverlay != null) {
+                    // Get background color from current session or use black as default
+                    int backgroundColor = 0xFF000000; // Default black
+                    TerminalSession session = getCurrentSession();
+                    if (session != null && session.getEmulator() != null) {
+                        backgroundColor = session.getEmulator().mColors.mCurrentColors[com.termux.terminal.TextStyle.COLOR_INDEX_BACKGROUND];
+                    }
+
+                    // Apply opacity to background color
+                    int alpha = (opacity * 255) / 100;
+                    int colorWithOpacity = (alpha << 24) | (backgroundColor & 0x00FFFFFF);
+                    colorOverlay.setBackgroundColor(colorWithOpacity);
+                    colorOverlay.setVisibility(View.VISIBLE);
+                    Logger.logDebug(LOG_TAG, "Color overlay applied with opacity=" + opacity + "%, color=" + Integer.toHexString(colorWithOpacity));
+                }
+
+                // Update wallpaper position after layout
+                blurView.post(() -> updateWallpaperBlurPosition(blurView, wallpaperDrawable));
+
+                // Use OnPreDrawListener for real-time position updates during window drag
+                final int[] lastPos = new int[2];
+                blurView.getViewTreeObserver().addOnPreDrawListener(() -> {
+                    int[] currentPos = new int[2];
+                    getWindow().getDecorView().getLocationOnScreen(currentPos);
+                    // Only update if position changed
+                    if (currentPos[0] != lastPos[0] || currentPos[1] != lastPos[1]) {
+                        lastPos[0] = currentPos[0];
+                        lastPos[1] = currentPos[1];
+                        updateWallpaperBlurPosition(blurView, wallpaperDrawable);
+                    }
+                    return true; // Return true to proceed with drawing
+                });
+            } else {
+                Logger.logError(LOG_TAG, "Could not get wallpaper drawable");
+                blurView.setVisibility(View.GONE);
+                if (colorOverlay != null) {
+                    colorOverlay.setVisibility(View.GONE);
+                }
+            }
+        } catch (Exception e) {
+            Logger.logError(LOG_TAG, "Error setting up wallpaper blur fallback: " + e.getMessage());
+            blurView.setVisibility(View.GONE);
+            if (colorOverlay != null) {
+                colorOverlay.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void updateWallpaperBlurPosition(ImageView blurView, Drawable wallpaperDrawable) {
+        if (blurView == null || wallpaperDrawable == null) return;
+
+        try {
+            // Get screen size
+            Point screenSize = new Point();
+            getWindowManager().getDefaultDisplay().getRealSize(screenSize);
+
+            // Get window position on screen
+            int[] windowPos = new int[2];
+            getWindow().getDecorView().getLocationOnScreen(windowPos);
+
+            // Get wallpaper intrinsic size
+            int wallpaperWidth = wallpaperDrawable.getIntrinsicWidth();
+            int wallpaperHeight = wallpaperDrawable.getIntrinsicHeight();
+
+            // Calculate scale to cover screen (like centerCrop but for full screen)
+            float scaleX = (float) screenSize.x / wallpaperWidth;
+            float scaleY = (float) screenSize.y / wallpaperHeight;
+            float scale = Math.max(scaleX, scaleY);
+
+            // Calculate centering offset for the scaled wallpaper
+            float scaledWidth = wallpaperWidth * scale;
+            float scaledHeight = wallpaperHeight * scale;
+            float centerOffsetX = (screenSize.x - scaledWidth) / 2f;
+            float centerOffsetY = (screenSize.y - scaledHeight) / 2f;
+
+            // Create matrix to position wallpaper correctly
+            Matrix matrix = new Matrix();
+            matrix.setScale(scale, scale);
+            // Translate to: center the wallpaper on screen, then offset by negative window position
+            matrix.postTranslate(centerOffsetX - windowPos[0], centerOffsetY - windowPos[1]);
+
+            blurView.setImageMatrix(matrix);
+
+            Logger.logDebug(LOG_TAG, "Wallpaper blur position updated: windowPos=[" + windowPos[0] + "," + windowPos[1] +
+                "], screen=[" + screenSize.x + "x" + screenSize.y + "], scale=" + scale);
+        } catch (Exception e) {
+            Logger.logError(LOG_TAG, "Error updating wallpaper blur position: " + e.getMessage());
         }
     }
 
@@ -1091,6 +1290,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         setMargins();
         setTerminalPadding();
         setTerminalToolbarHeight();
+        setWindowTransparencyAndBlur();
 
         FileReceiverActivity.updateFileReceiverActivityComponentsState(this);
 

@@ -1,11 +1,31 @@
-<com.termux.app.terminal.TermuxActivityRootView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_termux_root_view"
+    android:id="@+id/activity_termux_root_frame"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true">
+    android:layout_height="match_parent">
+
+    <!-- Background view for wallpaper blur effect (fallback when system blur unavailable) -->
+    <ImageView
+        android:id="@+id/background_blur_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <!-- Color overlay for background color + opacity on top of blur -->
+    <View
+        android:id="@+id/background_color_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.termux.app.terminal.TermuxActivityRootView
+        android:id="@+id/activity_termux_root_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:fitsSystemWindows="true">
 
     <RelativeLayout
         android:id="@+id/activity_termux_root_relative_layout"
@@ -121,3 +141,5 @@
         android:background="@android:color/transparent" />
 
 </com.termux.app.terminal.TermuxActivityRootView>
+
+</FrameLayout>

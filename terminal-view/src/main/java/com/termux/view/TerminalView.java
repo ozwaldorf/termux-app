@@ -90,6 +90,9 @@ public final class TerminalView extends View {
     public float mPaddingCellH = 0;
     public float mPaddingCellV = 0;
 
+    /** Background opacity as a percentage (0-100). 100 means fully opaque. */
+    private int mBackgroundOpacity = 100;
+
     /**
      * The current AutoFill type returned for {@link View#getAutofillType()} by {@link #getAutofillType()}.
      *
@@ -532,11 +535,13 @@ public final class TerminalView extends View {
      */
     public void setTextSize(int textSize) {
         mRenderer = new TerminalRenderer(textSize, mRenderer == null ? Typeface.MONOSPACE : mRenderer.mTypeface);
+        mRenderer.setBackgroundOpacity(mBackgroundOpacity);
         updateSize();
     }
 
     public void setTypeface(Typeface newTypeface) {
         mRenderer = new TerminalRenderer(mRenderer.mTextSize, newTypeface);
+        mRenderer.setBackgroundOpacity(mBackgroundOpacity);
         updateSize();
         invalidate();
     }
@@ -548,7 +553,26 @@ public final class TerminalView extends View {
 
     @Override
     public boolean isOpaque() {
-        return true;
+        return mBackgroundOpacity >= 100;
+    }
+
+    /**
+     * Set the background opacity (0-100 percent).
+     * @param opacity The opacity percentage. 100 is fully opaque, 0 is fully transparent.
+     */
+    public void setBackgroundOpacity(int opacity) {
+        mBackgroundOpacity = Math.max(0, Math.min(100, opacity));
+        if (mRenderer != null) {
+            mRenderer.setBackgroundOpacity(mBackgroundOpacity);
+        }
+        invalidate();
+    }
+
+    /**
+     * Get the current background opacity (0-100 percent).
+     */
+    public int getBackgroundOpacity() {
+        return mBackgroundOpacity;
     }
 
     /**
@@ -1046,7 +1070,9 @@ public final class TerminalView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         if (mEmulator == null) {
-            canvas.drawColor(0XFF000000);
+            // Apply opacity to the fallback black background
+            int alpha = (mBackgroundOpacity * 255) / 100;
+            canvas.drawColor((alpha << 24) | 0x000000);
         } else {
             float paddingHPx = mPaddingCellH * mRenderer.mFontWidth;
             float paddingVPx = mPaddingCellV * mRenderer.mFontLineSpacing;

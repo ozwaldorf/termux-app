@@ -33,6 +33,9 @@ public final class TerminalRenderer {
 
     private final float[] asciiMeasures = new float[127];
 
+    /** Background opacity as a percentage (0-100). 100 means fully opaque. */
+    private int mBackgroundOpacity = 100;
+
     public TerminalRenderer(int textSize, Typeface typeface) {
         mTextSize = textSize;
         mTypeface = typeface;
@@ -66,8 +69,10 @@ public final class TerminalRenderer {
         final int[] palette = mEmulator.mColors.mCurrentColors;
         final int cursorShape = mEmulator.getCursorStyle();
 
-        if (reverseVideo)
-            canvas.drawColor(palette[TextStyle.COLOR_INDEX_FOREGROUND], PorterDuff.Mode.SRC);
+        if (reverseVideo) {
+            int bgColor = applyOpacityToColor(palette[TextStyle.COLOR_INDEX_FOREGROUND]);
+            canvas.drawColor(bgColor, PorterDuff.Mode.SRC);
+        }
 
         float heightOffset = mFontLineSpacingAndAscent;
         for (int row = topRow; row < endRow; row++) {
@@ -245,5 +250,33 @@ public final class TerminalRenderer {
 
     public int getFontLineSpacing() {
         return mFontLineSpacing;
+    }
+
+    /**
+     * Set the background opacity (0-100 percent).
+     * @param opacity The opacity percentage. 100 is fully opaque, 0 is fully transparent.
+     */
+    public void setBackgroundOpacity(int opacity) {
+        mBackgroundOpacity = Math.max(0, Math.min(100, opacity));
+    }
+
+    /**
+     * Get the current background opacity (0-100 percent).
+     */
+    public int getBackgroundOpacity() {
+        return mBackgroundOpacity;
+    }
+
+    /**
+     * Apply the current opacity to a color.
+     * @param color The color to apply opacity to.
+     * @return The color with modified alpha based on opacity setting.
+     */
+    private int applyOpacityToColor(int color) {
+        if (mBackgroundOpacity >= 100) {
+            return color;
+        }
+        int alpha = (mBackgroundOpacity * 255) / 100;
+        return (alpha << 24) | (color & 0x00FFFFFF);
     }
 }

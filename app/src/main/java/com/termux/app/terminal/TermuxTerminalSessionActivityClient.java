@@ -10,7 +10,10 @@ import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
+import android.os.Build;
 import android.text.TextUtils;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ListView;
 
 import androidx.annotation.NonNull;
@@ -567,7 +570,44 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (!mActivity.isVisible()) return;
         TerminalSession session = mActivity.getCurrentSession();
         if (session != null && session.getEmulator() != null) {
-            mActivity.getWindow().getDecorView().setBackgroundColor(session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND]);
+            int backgroundColor = session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND];
+
+            // Get opacity and blur settings
+            int opacity = mActivity.getProperties().getBackgroundOpacity();
+            int blurRadius = mActivity.getProperties().getBackgroundBlurRadius();
+
+            // Apply opacity to background color
+            if (opacity < 100) {
+                int alpha = (opacity * 255) / 100;
+                backgroundColor = (alpha << 24) | (backgroundColor & 0x00FFFFFF);
+            }
+
+            Window window = mActivity.getWindow();
+            window.getDecorView().setBackgroundColor(backgroundColor);
+
+            // Apply blur on Android 12+ (API 31+)
+            // Blur only makes sense when the window is transparent
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (opacity < 100 && blurRadius > 0) {
+                    // Try to apply blur regardless of isCrossWindowBlurEnabled()
+                    // Some devices report false but still support blur
+                    window.setBackgroundBlurRadius(blurRadius);
+
+                    // FLAG_BLUR_BEHIND + setBlurBehindRadius for floating/freeform windows
+                    window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+                    WindowManager.LayoutParams params = window.getAttributes();
+                    params.setBlurBehindRadius(blurRadius);
+                    window.setAttributes(params);
+                } else {
+                    window.setBackgroundBlurRadius(0);
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+                }
+            }
+
+            // Update TerminalView opacity
+            if (mActivity.getTerminalView() != null) {
+                mActivity.getTerminalView().setBackgroundOpacity(opacity);
+            }
         }
     }
 

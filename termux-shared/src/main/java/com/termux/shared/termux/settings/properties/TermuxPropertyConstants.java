@@ -247,6 +247,23 @@ public final class TermuxPropertyConstants {
 
 
 
+    /** Defines the key for the background opacity (0-100 percent) */
+    public static final String KEY_BACKGROUND_OPACITY = "background-opacity"; // Default: "background-opacity"
+    public static final int IVALUE_BACKGROUND_OPACITY_MIN = 0;
+    public static final int IVALUE_BACKGROUND_OPACITY_MAX = 100;
+    public static final int DEFAULT_IVALUE_BACKGROUND_OPACITY = 100;
+
+    /**
+     * Defines the key for the background blur radius in pixels.
+     * Only effective on Android 12+ (API 31+). Set to 0 to disable blur.
+     */
+    public static final String KEY_BACKGROUND_BLUR_RADIUS = "background-blur"; // Default: "background-blur"
+    public static final int IVALUE_BACKGROUND_BLUR_RADIUS_MIN = 0;
+    public static final int IVALUE_BACKGROUND_BLUR_RADIUS_MAX = 150;
+    public static final int DEFAULT_IVALUE_BACKGROUND_BLUR_RADIUS = 0;
+
+
+
     /** Defines the key for the terminal transcript rows */
     public static final String KEY_TERMINAL_TRANSCRIPT_ROWS =  "terminal-transcript-rows"; // Default: "terminal-transcript-rows"
     public static final int IVALUE_TERMINAL_TRANSCRIPT_ROWS_MIN = TerminalEmulator.TERMINAL_TRANSCRIPT_ROWS_MIN;
@@ -412,6 +429,8 @@ public final class TermuxPropertyConstants {
         TermuxConstants.PROP_ALLOW_EXTERNAL_APPS,
 
         /* int */
+        KEY_BACKGROUND_BLUR_RADIUS,
+        KEY_BACKGROUND_OPACITY,
         KEY_BELL_BEHAVIOUR,
         KEY_DELETE_TMPDIR_FILES_OLDER_THAN_X_DAYS_ON_EXIT,
         KEY_TERMINAL_CURSOR_BLINK_RATE,
