@@ -668,18 +668,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 // Update wallpaper position after layout
                 blurView.post(() -> updateWallpaperBlurPosition(blurView, wallpaperDrawable));
 
-                // Use OnPreDrawListener for real-time position updates during window drag
-                final int[] lastPos = new int[2];
-                blurView.getViewTreeObserver().addOnPreDrawListener(() -> {
-                    int[] currentPos = new int[2];
-                    getWindow().getDecorView().getLocationOnScreen(currentPos);
-                    // Only update if position changed
-                    if (currentPos[0] != lastPos[0] || currentPos[1] != lastPos[1]) {
-                        lastPos[0] = currentPos[0];
-                        lastPos[1] = currentPos[1];
-                        updateWallpaperBlurPosition(blurView, wallpaperDrawable);
-                    }
-                    return true; // Return true to proceed with drawing
+                // Listen for layout changes to update position (for floating windows)
+                blurView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    updateWallpaperBlurPosition(blurView, wallpaperDrawable);
                 });
             } else {
                 Logger.logError(LOG_TAG, "Could not get wallpaper drawable");
