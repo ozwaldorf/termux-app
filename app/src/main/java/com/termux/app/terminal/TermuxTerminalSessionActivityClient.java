@@ -608,6 +608,14 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             if (mActivity.getTerminalView() != null) {
                 mActivity.getTerminalView().setBackgroundOpacity(opacity);
             }
+
+            // Update fallback color overlay if visible
+            android.view.View colorOverlay = mActivity.findViewById(com.termux.R.id.background_color_overlay);
+            if (colorOverlay != null && colorOverlay.getVisibility() == android.view.View.VISIBLE) {
+                int overlayColor = session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND];
+                int alpha = (opacity * 255) / 100;
+                colorOverlay.setBackgroundColor((alpha << 24) | (overlayColor & 0x00FFFFFF));
+            }
         }
     }
 
