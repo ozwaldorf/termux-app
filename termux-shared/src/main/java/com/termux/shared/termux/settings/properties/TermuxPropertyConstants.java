@@ -259,6 +259,12 @@ public final class TermuxPropertyConstants {
 
     /* float */
 
+    /** Defines the key for the terminal padding in cell units (horizontal,vertical) */
+    public static final String KEY_TERMINAL_PADDING = "padding"; // Default: "padding"
+    public static final float IVALUE_TERMINAL_PADDING_MIN = 0;
+    public static final float IVALUE_TERMINAL_PADDING_MAX = 10;
+    public static final float[] DEFAULT_IVALUE_TERMINAL_PADDING = {0, 0};
+
     /** Defines the key for the terminal toolbar height */
     public static final String KEY_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR =  "terminal-toolbar-height"; // Default: "terminal-toolbar-height"
     public static final float IVALUE_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR_MIN = 0.4f;
@@ -415,6 +421,7 @@ public final class TermuxPropertyConstants {
         KEY_TERMINAL_TRANSCRIPT_ROWS,
 
         /* float */
+        KEY_TERMINAL_PADDING,
         KEY_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR,
 
         /* Integer */

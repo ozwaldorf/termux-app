@@ -275,6 +275,8 @@ public abstract class TermuxSharedProperties {
                 return (int) getTerminalTranscriptRowsInternalPropertyValueFromValue(value);
 
             /* float */
+            case TermuxPropertyConstants.KEY_TERMINAL_PADDING:
+                return (String) getTerminalPaddingInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR:
                 return (float) getTerminalToolbarHeightScaleFactorInternalPropertyValueFromValue(value);
 
@@ -436,6 +438,41 @@ public abstract class TermuxSharedProperties {
             TermuxPropertyConstants.IVALUE_TERMINAL_TRANSCRIPT_ROWS_MIN,
             TermuxPropertyConstants.IVALUE_TERMINAL_TRANSCRIPT_ROWS_MAX,
             true, true, LOG_TAG);
+    }
+
+    /**
+     * Parses "h,v" or a single "hv" float value for terminal padding in cell units.
+     * Each component is clamped to [{@link TermuxPropertyConstants#IVALUE_TERMINAL_PADDING_MIN},
+     * {@link TermuxPropertyConstants#IVALUE_TERMINAL_PADDING_MAX}].
+     * Returns a normalized "h,v" {@link String} since {@link SharedProperties#putToMap} does not support arrays.
+     *
+     * @param value The {@link String} value to convert.
+     * @return Returns a validated "h,v" string.
+     */
+    public static String getTerminalPaddingInternalPropertyValueFromValue(String value) {
+        float[] def = TermuxPropertyConstants.DEFAULT_IVALUE_TERMINAL_PADDING;
+        if (value == null || value.isEmpty()) return def[0] + "," + def[1];
+
+        try {
+            float h, v;
+            if (value.contains(",")) {
+                String[] parts = value.split(",", 2);
+                h = Float.parseFloat(parts[0].trim());
+                v = Float.parseFloat(parts[1].trim());
+            } else {
+                h = v = Float.parseFloat(value.trim());
+            }
+
+            h = Math.max(TermuxPropertyConstants.IVALUE_TERMINAL_PADDING_MIN,
+                Math.min(TermuxPropertyConstants.IVALUE_TERMINAL_PADDING_MAX, h));
+            v = Math.max(TermuxPropertyConstants.IVALUE_TERMINAL_PADDING_MIN,
+                Math.min(TermuxPropertyConstants.IVALUE_TERMINAL_PADDING_MAX, v));
+
+            return h + "," + v;
+        } catch (NumberFormatException e) {
+            Logger.logError(LOG_TAG, "Invalid value \"" + value + "\" for key \"" + TermuxPropertyConstants.KEY_TERMINAL_PADDING + "\", using default");
+            return def[0] + "," + def[1];
+        }
     }
 
     /**
@@ -656,6 +693,17 @@ public abstract class TermuxSharedProperties {
 
     public float getTerminalToolbarHeightScaleFactor() {
         return (float) getInternalPropertyValue(TermuxPropertyConstants.KEY_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR, true);
+    }
+
+    public float[] getTerminalPadding() {
+        String value = (String) getInternalPropertyValue(TermuxPropertyConstants.KEY_TERMINAL_PADDING, true);
+        if (value != null && value.contains(",")) {
+            try {
+                String[] parts = value.split(",", 2);
+                return new float[]{Float.parseFloat(parts[0]), Float.parseFloat(parts[1])};
+            } catch (NumberFormatException ignored) {}
+        }
+        return TermuxPropertyConstants.DEFAULT_IVALUE_TERMINAL_PADDING;
     }
 
     public boolean isBackKeyTheEscapeKey() {

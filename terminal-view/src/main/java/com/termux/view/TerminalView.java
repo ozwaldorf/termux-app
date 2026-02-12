@@ -86,6 +86,10 @@ public final class TerminalView extends View {
     /** If non-zero, this is the last unicode code point received if that was a combining character. */
     int mCombiningAccent;
 
+    /** Terminal padding in cell units (horizontal and vertical). */
+    public float mPaddingCellH = 0;
+    public float mPaddingCellV = 0;
+
     /**
      * The current AutoFill type returned for {@link View#getAutofillType()} by {@link #getAutofillType()}.
      *
@@ -548,6 +552,18 @@ public final class TerminalView extends View {
     }
 
     /**
+     * Set the terminal padding in cell units.
+     * @param h Horizontal padding in cell width units (applied to left and right).
+     * @param v Vertical padding in cell height units (applied to top and bottom).
+     */
+    public void setTerminalPadding(float h, float v) {
+        mPaddingCellH = h;
+        mPaddingCellV = v;
+        updateSize();
+        invalidate();
+    }
+
+    /**
      * Get the zero indexed column and row of the terminal view for the
      * position of the event.
      *
@@ -559,8 +575,10 @@ public final class TerminalView extends View {
      * @return Array with the column and row.
      */
     public int[] getColumnAndRow(MotionEvent event, boolean relativeToScroll) {
-        int column = (int) (event.getX() / mRenderer.mFontWidth);
-        int row = (int) ((event.getY() - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing);
+        float paddingHPx = mPaddingCellH * mRenderer.mFontWidth;
+        float paddingVPx = mPaddingCellV * mRenderer.mFontLineSpacing;
+        int column = (int) ((event.getX() - paddingHPx) / mRenderer.mFontWidth);
+        int row = (int) ((event.getY() - paddingVPx - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing);
         if (relativeToScroll) {
             row += mTopRow;
         }
@@ -1001,9 +1019,14 @@ public final class TerminalView extends View {
         int viewHeight = getHeight();
         if (viewWidth == 0 || viewHeight == 0 || mTermSession == null) return;
 
+        int paddingHPx = Math.round(mPaddingCellH * mRenderer.mFontWidth);
+        int paddingVPx = Math.round(mPaddingCellV * mRenderer.mFontLineSpacing);
+        int effectiveWidth = viewWidth - 2 * paddingHPx;
+        int effectiveHeight = viewHeight - 2 * paddingVPx;
+
         // Set to 80 and 24 if you want to enable vttest.
-        int newColumns = Math.max(4, (int) (viewWidth / mRenderer.mFontWidth));
-        int newRows = Math.max(4, (viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing);
+        int newColumns = Math.max(4, (int) (effectiveWidth / mRenderer.mFontWidth));
+        int newRows = Math.max(4, (effectiveHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing);
 
         if (mEmulator == null || (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows)) {
             mTermSession.updateSize(newColumns, newRows, (int) mRenderer.getFontWidth(), mRenderer.getFontLineSpacing());
@@ -1025,6 +1048,12 @@ public final class TerminalView extends View {
         if (mEmulator == null) {
             canvas.drawColor(0XFF000000);
         } else {
+            float paddingHPx = mPaddingCellH * mRenderer.mFontWidth;
+            float paddingVPx = mPaddingCellV * mRenderer.mFontLineSpacing;
+
+            canvas.save();
+            canvas.translate(paddingHPx, paddingVPx);
+
             // render the terminal view and highlight any selected text
             int[] sel = mDefaultSelectors;
             if (mTextSelectionCursorController != null) {
@@ -1032,6 +1061,8 @@ public final class TerminalView extends View {
             }
 
             mRenderer.render(mEmulator, canvas, mTopRow, sel[0], sel[1], sel[2], sel[3]);
+
+            canvas.restore();
 
             // render the text selection handles
             renderTextSelection();
@@ -1047,22 +1078,26 @@ public final class TerminalView extends View {
     }
 
     public int getCursorX(float x) {
-        return (int) (x / mRenderer.mFontWidth);
+        float paddingHPx = mPaddingCellH * mRenderer.mFontWidth;
+        return (int) ((x - paddingHPx) / mRenderer.mFontWidth);
     }
 
     public int getCursorY(float y) {
-        return (int) (((y - 40) / mRenderer.mFontLineSpacing) + mTopRow);
+        float paddingVPx = mPaddingCellV * mRenderer.mFontLineSpacing;
+        return (int) (((y - paddingVPx - 40) / mRenderer.mFontLineSpacing) + mTopRow);
     }
 
     public int getPointX(int cx) {
         if (cx > mEmulator.mColumns) {
             cx = mEmulator.mColumns;
         }
-        return Math.round(cx * mRenderer.mFontWidth);
+        float paddingHPx = mPaddingCellH * mRenderer.mFontWidth;
+        return Math.round(cx * mRenderer.mFontWidth + paddingHPx);
     }
 
     public int getPointY(int cy) {
-        return Math.round((cy - mTopRow) * mRenderer.mFontLineSpacing);
+        float paddingVPx = mPaddingCellV * mRenderer.mFontLineSpacing;
+        return Math.round((cy - mTopRow) * mRenderer.mFontLineSpacing + paddingVPx);
     }
 
     public int getTopRow() {
@@ -1192,7 +1227,6 @@ public final class TerminalView extends View {
             mClient.logStackTraceWithMessage(LOG_TAG, "Failed to cancel Autofill request", e);
         }
     }
-
 
 
 

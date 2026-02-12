@@ -252,6 +252,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         setTermuxTerminalViewAndClients();
 
+        setTerminalPadding();
+
         setTerminalToolbarView(savedInstanceState);
 
         setSettingsButtonView();
@@ -528,6 +530,14 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         int marginHorizontal = mProperties.getTerminalMarginHorizontal();
         int marginVertical = mProperties.getTerminalMarginVertical();
         ViewUtils.setLayoutMarginsInDp(relativeLayout, marginHorizontal, marginVertical, marginHorizontal, marginVertical);
+    }
+
+    private void setTerminalPadding() {
+        if (mTerminalView == null || mProperties == null) return;
+        float[] padding = mProperties.getTerminalPadding();
+        if (padding != null && padding.length == 2) {
+            mTerminalView.setTerminalPadding(padding[0], padding[1]);
+        }
     }
 
 
@@ -1079,6 +1089,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
 
         setMargins();
+        setTerminalPadding();
         setTerminalToolbarHeight();
 
         FileReceiverActivity.updateFileReceiverActivityComponentsState(this);
