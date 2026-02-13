@@ -271,10 +271,12 @@ public abstract class TermuxSharedProperties {
                 return (int) getTerminalMarginHorizontalInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_TERMINAL_MARGIN_VERTICAL:
                 return (int) getTerminalMarginVerticalInternalPropertyValueFromValue(value);
-            case TermuxPropertyConstants.KEY_BACKGROUND_OPACITY:
-                return (int) getBackgroundOpacityInternalPropertyValueFromValue(value);
-            case TermuxPropertyConstants.KEY_BACKGROUND_BLUR_RADIUS:
-                return (int) getBackgroundBlurRadiusInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_OPACITY:
+                return (int) getOpacityInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BLUR_RADIUS:
+                return (int) getBlurRadiusInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BLUR_PASSES:
+                return (int) getBlurPassesInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_TERMINAL_TRANSCRIPT_ROWS:
                 return (int) getTerminalTranscriptRowsInternalPropertyValueFromValue(value);
 
@@ -292,6 +294,8 @@ public abstract class TermuxSharedProperties {
                 return (Integer) getCodePointForSessionShortcuts(key, value);
 
             /* String (may be null) */
+            case TermuxPropertyConstants.KEY_BLUR_MODE:
+                return (String) getBlurModeInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_BACK_KEY_BEHAVIOUR:
                 return (String) getBackKeyBehaviourInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_DEFAULT_WORKING_DIRECTORY:
@@ -481,37 +485,69 @@ public abstract class TermuxSharedProperties {
 
     /**
      * Returns the int for the value if its not null and is between
-     * {@link TermuxPropertyConstants#IVALUE_BACKGROUND_OPACITY_MIN} and
-     * {@link TermuxPropertyConstants#IVALUE_BACKGROUND_OPACITY_MAX},
-     * otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_BACKGROUND_OPACITY}.
+     * {@link TermuxPropertyConstants#IVALUE_OPACITY_MIN} and
+     * {@link TermuxPropertyConstants#IVALUE_OPACITY_MAX},
+     * otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_OPACITY}.
      *
      * @param value The {@link String} value to convert.
      * @return Returns the internal value for value.
      */
-    public static int getBackgroundOpacityInternalPropertyValueFromValue(String value) {
-        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BACKGROUND_OPACITY,
-            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BACKGROUND_OPACITY),
-            TermuxPropertyConstants.DEFAULT_IVALUE_BACKGROUND_OPACITY,
-            TermuxPropertyConstants.IVALUE_BACKGROUND_OPACITY_MIN,
-            TermuxPropertyConstants.IVALUE_BACKGROUND_OPACITY_MAX,
+    public static int getOpacityInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_OPACITY,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_OPACITY),
+            TermuxPropertyConstants.DEFAULT_IVALUE_OPACITY,
+            TermuxPropertyConstants.IVALUE_OPACITY_MIN,
+            TermuxPropertyConstants.IVALUE_OPACITY_MAX,
+            true, true, LOG_TAG);
+    }
+
+    /**
+     * Returns the internal value after mapping it based on
+     * {@link TermuxPropertyConstants#MAP_BLUR_MODE} if the value is not {@code null}
+     * and is valid, otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_BLUR_MODE}.
+     *
+     * @param value The {@link String} value to convert.
+     * @return Returns the internal value for value.
+     */
+    public static String getBlurModeInternalPropertyValueFromValue(String value) {
+        return (String) SharedProperties.getDefaultIfNotInMap(TermuxPropertyConstants.KEY_BLUR_MODE,
+            TermuxPropertyConstants.MAP_BLUR_MODE, SharedProperties.toLowerCase(value),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_MODE, true, LOG_TAG);
+    }
+
+    /**
+     * Returns the int for the value if its not null and is between
+     * {@link TermuxPropertyConstants#IVALUE_BLUR_RADIUS_MIN} and
+     * {@link TermuxPropertyConstants#IVALUE_BLUR_RADIUS_MAX},
+     * otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_BLUR_RADIUS}.
+     *
+     * @param value The {@link String} value to convert.
+     * @return Returns the internal value for value.
+     */
+    public static int getBlurRadiusInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BLUR_RADIUS,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_RADIUS),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_RADIUS,
+            TermuxPropertyConstants.IVALUE_BLUR_RADIUS_MIN,
+            TermuxPropertyConstants.IVALUE_BLUR_RADIUS_MAX,
             true, true, LOG_TAG);
     }
 
     /**
      * Returns the int for the value if its not null and is between
-     * {@link TermuxPropertyConstants#IVALUE_BACKGROUND_BLUR_RADIUS_MIN} and
-     * {@link TermuxPropertyConstants#IVALUE_BACKGROUND_BLUR_RADIUS_MAX},
-     * otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_BACKGROUND_BLUR_RADIUS}.
+     * {@link TermuxPropertyConstants#IVALUE_BLUR_PASSES_MIN} and
+     * {@link TermuxPropertyConstants#IVALUE_BLUR_PASSES_MAX},
+     * otherwise returns {@link TermuxPropertyConstants#DEFAULT_IVALUE_BLUR_PASSES}.
      *
      * @param value The {@link String} value to convert.
      * @return Returns the internal value for value.
      */
-    public static int getBackgroundBlurRadiusInternalPropertyValueFromValue(String value) {
-        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BACKGROUND_BLUR_RADIUS,
-            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BACKGROUND_BLUR_RADIUS),
-            TermuxPropertyConstants.DEFAULT_IVALUE_BACKGROUND_BLUR_RADIUS,
-            TermuxPropertyConstants.IVALUE_BACKGROUND_BLUR_RADIUS_MIN,
-            TermuxPropertyConstants.IVALUE_BACKGROUND_BLUR_RADIUS_MAX,
+    public static int getBlurPassesInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BLUR_PASSES,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_PASSES),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_PASSES,
+            TermuxPropertyConstants.IVALUE_BLUR_PASSES_MIN,
+            TermuxPropertyConstants.IVALUE_BLUR_PASSES_MAX,
             true, true, LOG_TAG);
     }
 
@@ -731,12 +767,20 @@ public abstract class TermuxSharedProperties {
         return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_TERMINAL_TRANSCRIPT_ROWS, true);
     }
 
-    public int getBackgroundOpacity() {
-        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BACKGROUND_OPACITY, true);
+    public int getOpacity() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_OPACITY, true);
     }
 
-    public int getBackgroundBlurRadius() {
-        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BACKGROUND_BLUR_RADIUS, true);
+    public String getBlurMode() {
+        return (String) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_MODE, true);
+    }
+
+    public int getBlurRadius() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_RADIUS, true);
+    }
+
+    public int getBlurPasses() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_PASSES, true);
     }
 
     public float getTerminalToolbarHeightScaleFactor() {

@@ -572,11 +572,9 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (session != null && session.getEmulator() != null) {
             int backgroundColor = session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND];
 
-            // Get opacity and blur settings
-            int opacity = mActivity.getProperties().getBackgroundOpacity();
-            int blurRadius = mActivity.getProperties().getBackgroundBlurRadius();
+            int opacity = mActivity.getProperties().getOpacity();
+            String blurMode = mActivity.getProperties().getBlurMode();
 
-            // Apply opacity to background color
             if (opacity < 100) {
                 int alpha = (opacity * 255) / 100;
                 backgroundColor = (alpha << 24) | (backgroundColor & 0x00FFFFFF);
@@ -585,15 +583,11 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             Window window = mActivity.getWindow();
             window.getDecorView().setBackgroundColor(backgroundColor);
 
-            // Apply blur on Android 12+ (API 31+)
-            // Blur only makes sense when the window is transparent
+            // Only apply native blur calls when blur mode is native
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (opacity < 100 && blurRadius > 0) {
-                    // Try to apply blur regardless of isCrossWindowBlurEnabled()
-                    // Some devices report false but still support blur
+                if (opacity < 100 && "native".equals(blurMode)) {
+                    int blurRadius = mActivity.getProperties().getBlurRadius();
                     window.setBackgroundBlurRadius(blurRadius);
-
-                    // FLAG_BLUR_BEHIND + setBlurBehindRadius for floating/freeform windows
                     window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
                     WindowManager.LayoutParams params = window.getAttributes();
                     params.setBlurBehindRadius(blurRadius);
@@ -604,12 +598,11 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
                 }
             }
 
-            // Update TerminalView opacity
             if (mActivity.getTerminalView() != null) {
                 mActivity.getTerminalView().setBackgroundOpacity(opacity);
             }
 
-            // Update fallback color overlay if visible
+            // Update color overlay for xray mode
             android.view.View colorOverlay = mActivity.findViewById(com.termux.R.id.background_color_overlay);
             if (colorOverlay != null && colorOverlay.getVisibility() == android.view.View.VISIBLE) {
                 int overlayColor = session.getEmulator().mColors.mCurrentColors[TextStyle.COLOR_INDEX_BACKGROUND];

@@ -247,20 +247,39 @@ public final class TermuxPropertyConstants {
 
 
 
-    /** Defines the key for the background opacity (0-100 percent) */
-    public static final String KEY_BACKGROUND_OPACITY = "background-opacity"; // Default: "background-opacity"
-    public static final int IVALUE_BACKGROUND_OPACITY_MIN = 0;
-    public static final int IVALUE_BACKGROUND_OPACITY_MAX = 100;
-    public static final int DEFAULT_IVALUE_BACKGROUND_OPACITY = 100;
+    /** Defines the key for the opacity (0-100 percent) */
+    public static final String KEY_OPACITY = "opacity"; // Default: "opacity"
+    public static final int IVALUE_OPACITY_MIN = 0;
+    public static final int IVALUE_OPACITY_MAX = 100;
+    public static final int DEFAULT_IVALUE_OPACITY = 100;
 
-    /**
-     * Defines the key for the background blur radius in pixels.
-     * Only effective on Android 12+ (API 31+). Set to 0 to disable blur.
-     */
-    public static final String KEY_BACKGROUND_BLUR_RADIUS = "background-blur"; // Default: "background-blur"
-    public static final int IVALUE_BACKGROUND_BLUR_RADIUS_MIN = 0;
-    public static final int IVALUE_BACKGROUND_BLUR_RADIUS_MAX = 150;
-    public static final int DEFAULT_IVALUE_BACKGROUND_BLUR_RADIUS = 0;
+    /** Defines the key for the blur mode */
+    public static final String KEY_BLUR_MODE = "blur"; // Default: "blur"
+
+    public static final String IVALUE_BLUR_MODE_NONE = "none";
+    public static final String IVALUE_BLUR_MODE_XRAY = "xray";
+    public static final String IVALUE_BLUR_MODE_NATIVE = "native";
+    public static final String DEFAULT_IVALUE_BLUR_MODE = IVALUE_BLUR_MODE_NONE;
+
+    /** Defines the bidirectional map for blur mode values and their internal values */
+    public static final ImmutableBiMap<String, String> MAP_BLUR_MODE =
+        new ImmutableBiMap.Builder<String, String>()
+            .put(IVALUE_BLUR_MODE_NONE, IVALUE_BLUR_MODE_NONE)
+            .put(IVALUE_BLUR_MODE_XRAY, IVALUE_BLUR_MODE_XRAY)
+            .put(IVALUE_BLUR_MODE_NATIVE, IVALUE_BLUR_MODE_NATIVE)
+            .build();
+
+    /** Defines the key for the blur radius (shared between xray and native modes) */
+    public static final String KEY_BLUR_RADIUS = "blur-radius"; // Default: "blur-radius"
+    public static final int IVALUE_BLUR_RADIUS_MIN = 1;
+    public static final int IVALUE_BLUR_RADIUS_MAX = 150;
+    public static final int DEFAULT_IVALUE_BLUR_RADIUS = 25;
+
+    /** Defines the key for the number of blur passes (xray mode only) */
+    public static final String KEY_BLUR_PASSES = "blur-passes"; // Default: "blur-passes"
+    public static final int IVALUE_BLUR_PASSES_MIN = 1;
+    public static final int IVALUE_BLUR_PASSES_MAX = 150;
+    public static final int DEFAULT_IVALUE_BLUR_PASSES = 1;
 
 
 
@@ -429,15 +448,19 @@ public final class TermuxPropertyConstants {
         TermuxConstants.PROP_ALLOW_EXTERNAL_APPS,
 
         /* int */
-        KEY_BACKGROUND_BLUR_RADIUS,
-        KEY_BACKGROUND_OPACITY,
+        KEY_OPACITY,
         KEY_BELL_BEHAVIOUR,
         KEY_DELETE_TMPDIR_FILES_OLDER_THAN_X_DAYS_ON_EXIT,
         KEY_TERMINAL_CURSOR_BLINK_RATE,
         KEY_TERMINAL_CURSOR_STYLE,
         KEY_TERMINAL_MARGIN_HORIZONTAL,
         KEY_TERMINAL_MARGIN_VERTICAL,
+        KEY_BLUR_RADIUS,
+        KEY_BLUR_PASSES,
         KEY_TERMINAL_TRANSCRIPT_ROWS,
+
+        /* String */
+        KEY_BLUR_MODE,
 
         /* float */
         KEY_TERMINAL_PADDING,
