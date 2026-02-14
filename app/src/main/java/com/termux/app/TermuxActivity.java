@@ -29,12 +29,17 @@ import android.widget.ListView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+import android.graphics.Bitmap;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.app.WallpaperManager;
+
+import java.util.Random;
 
 import com.termux.R;
 import com.termux.app.api.file.FileReceiverActivity;
@@ -556,6 +561,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Logger.logDebug(LOG_TAG, "setWindowTransparencyAndBlur: opacity=" + opacity + ", blurMode=" + blurMode + ", API=" + Build.VERSION.SDK_INT);
 
         ImageView blurView = findViewById(R.id.background_blur_view);
+        ImageView noiseOverlay = findViewById(R.id.background_noise_overlay);
         View colorOverlay = findViewById(R.id.background_color_overlay);
 
         if (opacity >= 100) {
@@ -563,6 +569,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK));
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
             if (blurView != null) blurView.setVisibility(View.GONE);
+            if (noiseOverlay != null) noiseOverlay.setVisibility(View.GONE);
             if (colorOverlay != null) colorOverlay.setVisibility(View.GONE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 getWindow().setBackgroundBlurRadius(0);
@@ -585,12 +592,17 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 }
                 int radius = Math.min(mProperties.getBlurRadius(), 25);
                 int passes = mProperties.getBlurPasses();
-                setupWallpaperBlurFallback(blurView, colorOverlay, radius, passes, opacity);
+                int contrast = mProperties.getBlurContrast();
+                int saturation = mProperties.getBlurSaturation();
+                int brightness = mProperties.getBlurBrightness();
+                int noise = mProperties.getBlurNoise();
+                setupWallpaperBlurFallback(blurView, noiseOverlay, colorOverlay, radius, passes, contrast, saturation, brightness, noise, opacity);
                 break;
             }
             case "native": {
                 // Hide xray views
                 if (blurView != null) blurView.setVisibility(View.GONE);
+                if (noiseOverlay != null) noiseOverlay.setVisibility(View.GONE);
                 if (colorOverlay != null) colorOverlay.setVisibility(View.GONE);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     int radius = mProperties.getBlurRadius();
@@ -615,12 +627,14 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
                 }
                 if (blurView != null) blurView.setVisibility(View.GONE);
+                if (noiseOverlay != null) noiseOverlay.setVisibility(View.GONE);
                 if (colorOverlay != null) colorOverlay.setVisibility(View.GONE);
                 break;
         }
     }
 
-    private void setupWallpaperBlurFallback(ImageView blurView, View colorOverlay, int blurRadius, int passes, int opacity) {
+    private void setupWallpaperBlurFallback(ImageView blurView, ImageView noiseOverlay, View colorOverlay,
+            int blurRadius, int passes, int contrast, int saturation, int brightness, int noise, int opacity) {
         if (blurView == null) {
             Logger.logError(LOG_TAG, "blurView is null, cannot setup wallpaper blur fallback");
             return;
@@ -636,15 +650,41 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 blurView.setVisibility(View.VISIBLE);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    RenderEffect blurEffect = null;
+                    RenderEffect effect = null;
                     for (int i = 0; i < passes; i++) {
                         RenderEffect pass = RenderEffect.createBlurEffect((float) blurRadius, (float) blurRadius, Shader.TileMode.CLAMP);
-                        blurEffect = (blurEffect == null) ? pass : RenderEffect.createChainEffect(pass, blurEffect);
+                        effect = (effect == null) ? pass : RenderEffect.createChainEffect(pass, effect);
                     }
-                    blurView.setRenderEffect(blurEffect);
-                    Logger.logDebug(LOG_TAG, "Wallpaper blur fallback: radius=" + blurRadius + ", passes=" + passes);
+
+                    // Chain color matrix effect for contrast/saturation/brightness if any differ from default
+                    if (contrast != 100 || saturation != 100 || brightness != 100) {
+                        ColorMatrix colorMatrix = buildColorMatrix(contrast / 100f, saturation / 100f, brightness / 100f);
+                        RenderEffect colorEffect = RenderEffect.createColorFilterEffect(new ColorMatrixColorFilter(colorMatrix));
+                        effect = (effect == null) ? colorEffect : RenderEffect.createChainEffect(colorEffect, effect);
+                    }
+
+                    blurView.setRenderEffect(effect);
+                    Logger.logDebug(LOG_TAG, "Wallpaper blur fallback: radius=" + blurRadius + ", passes=" + passes +
+                        ", contrast=" + contrast + ", saturation=" + saturation + ", brightness=" + brightness);
                 } else {
                     Logger.logDebug(LOG_TAG, "Wallpaper shown without blur (API < 31)");
+                }
+
+                // Setup noise overlay at view resolution
+                if (noiseOverlay != null) {
+                    if (noise > 0) {
+                        noiseOverlay.setAlpha(noise / 100f);
+                        noiseOverlay.setVisibility(View.VISIBLE);
+                        noiseOverlay.post(() -> {
+                            int w = noiseOverlay.getWidth();
+                            int h = noiseOverlay.getHeight();
+                            if (w > 0 && h > 0) {
+                                noiseOverlay.setImageBitmap(generateNoiseBitmap(w, h));
+                            }
+                        });
+                    } else {
+                        noiseOverlay.setVisibility(View.GONE);
+                    }
                 }
 
                 if (colorOverlay != null) {
@@ -666,13 +706,56 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             } else {
                 Logger.logError(LOG_TAG, "Could not get wallpaper drawable");
                 blurView.setVisibility(View.GONE);
+                if (noiseOverlay != null) noiseOverlay.setVisibility(View.GONE);
                 if (colorOverlay != null) colorOverlay.setVisibility(View.GONE);
             }
         } catch (Exception e) {
             Logger.logError(LOG_TAG, "Error setting up wallpaper blur fallback: " + e.getMessage());
             blurView.setVisibility(View.GONE);
+            if (noiseOverlay != null) noiseOverlay.setVisibility(View.GONE);
             if (colorOverlay != null) colorOverlay.setVisibility(View.GONE);
         }
+    }
+
+    private static ColorMatrix buildColorMatrix(float contrast, float saturation, float brightness) {
+        // Saturation matrix
+        ColorMatrix satMatrix = new ColorMatrix();
+        satMatrix.setSaturation(saturation);
+
+        // Contrast matrix: scale around 0.5 midpoint
+        float t = (1f - contrast) / 2f * 255f;
+        ColorMatrix conMatrix = new ColorMatrix(new float[] {
+            contrast, 0, 0, 0, t,
+            0, contrast, 0, 0, t,
+            0, 0, contrast, 0, t,
+            0, 0, 0, 1, 0
+        });
+
+        // Brightness matrix: simple scale
+        ColorMatrix briMatrix = new ColorMatrix(new float[] {
+            brightness, 0, 0, 0, 0,
+            0, brightness, 0, 0, 0,
+            0, 0, brightness, 0, 0,
+            0, 0, 0, 1, 0
+        });
+
+        // Combine: saturation first, then contrast, then brightness
+        ColorMatrix combined = new ColorMatrix();
+        combined.setConcat(conMatrix, satMatrix);
+        combined.postConcat(briMatrix);
+        return combined;
+    }
+
+    private static Bitmap generateNoiseBitmap(int width, int height) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Random random = new Random();
+        int[] pixels = new int[width * height];
+        for (int i = 0; i < pixels.length; i++) {
+            int gray = random.nextInt(256);
+            pixels[i] = 0xFF000000 | (gray << 16) | (gray << 8) | gray;
+        }
+        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
+        return bitmap;
     }
 
     private void updateWallpaperBlurPosition(ImageView blurView, Drawable wallpaperDrawable) {

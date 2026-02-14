@@ -277,6 +277,14 @@ public abstract class TermuxSharedProperties {
                 return (int) getBlurRadiusInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_BLUR_PASSES:
                 return (int) getBlurPassesInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BLUR_CONTRAST:
+                return (int) getBlurContrastInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BLUR_SATURATION:
+                return (int) getBlurSaturationInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BLUR_BRIGHTNESS:
+                return (int) getBlurBrightnessInternalPropertyValueFromValue(value);
+            case TermuxPropertyConstants.KEY_BLUR_NOISE:
+                return (int) getBlurNoiseInternalPropertyValueFromValue(value);
             case TermuxPropertyConstants.KEY_TERMINAL_TRANSCRIPT_ROWS:
                 return (int) getTerminalTranscriptRowsInternalPropertyValueFromValue(value);
 
@@ -551,6 +559,42 @@ public abstract class TermuxSharedProperties {
             true, true, LOG_TAG);
     }
 
+    public static int getBlurContrastInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BLUR_CONTRAST,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_CONTRAST),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_CONTRAST,
+            TermuxPropertyConstants.IVALUE_BLUR_CONTRAST_MIN,
+            TermuxPropertyConstants.IVALUE_BLUR_CONTRAST_MAX,
+            true, true, LOG_TAG);
+    }
+
+    public static int getBlurSaturationInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BLUR_SATURATION,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_SATURATION),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_SATURATION,
+            TermuxPropertyConstants.IVALUE_BLUR_SATURATION_MIN,
+            TermuxPropertyConstants.IVALUE_BLUR_SATURATION_MAX,
+            true, true, LOG_TAG);
+    }
+
+    public static int getBlurBrightnessInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BLUR_BRIGHTNESS,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_BRIGHTNESS),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_BRIGHTNESS,
+            TermuxPropertyConstants.IVALUE_BLUR_BRIGHTNESS_MIN,
+            TermuxPropertyConstants.IVALUE_BLUR_BRIGHTNESS_MAX,
+            true, true, LOG_TAG);
+    }
+
+    public static int getBlurNoiseInternalPropertyValueFromValue(String value) {
+        return SharedProperties.getDefaultIfNotInRange(TermuxPropertyConstants.KEY_BLUR_NOISE,
+            DataUtils.getIntFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_NOISE),
+            TermuxPropertyConstants.DEFAULT_IVALUE_BLUR_NOISE,
+            TermuxPropertyConstants.IVALUE_BLUR_NOISE_MIN,
+            TermuxPropertyConstants.IVALUE_BLUR_NOISE_MAX,
+            true, true, LOG_TAG);
+    }
+
     /**
      * Returns the int for the value if its not null and is between
      * {@link TermuxPropertyConstants#IVALUE_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR_MIN} and
@@ -781,6 +825,22 @@ public abstract class TermuxSharedProperties {
 
     public int getBlurPasses() {
         return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_PASSES, true);
+    }
+
+    public int getBlurContrast() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_CONTRAST, true);
+    }
+
+    public int getBlurSaturation() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_SATURATION, true);
+    }
+
+    public int getBlurBrightness() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_BRIGHTNESS, true);
+    }
+
+    public int getBlurNoise() {
+        return (int) getInternalPropertyValue(TermuxPropertyConstants.KEY_BLUR_NOISE, true);
     }
 
     public float getTerminalToolbarHeightScaleFactor() {

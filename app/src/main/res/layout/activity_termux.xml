@@ -13,6 +13,14 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
+    <!-- Noise overlay for xray blur post-processing -->
+    <ImageView
+        android:id="@+id/background_noise_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:visibility="gone" />
+
     <!-- Color overlay for background color + opacity on top of blur -->
     <View
         android:id="@+id/background_color_overlay"

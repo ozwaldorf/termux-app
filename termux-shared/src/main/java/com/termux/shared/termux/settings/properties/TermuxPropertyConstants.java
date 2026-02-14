@@ -281,6 +281,30 @@ public final class TermuxPropertyConstants {
     public static final int IVALUE_BLUR_PASSES_MAX = 150;
     public static final int DEFAULT_IVALUE_BLUR_PASSES = 1;
 
+    /** Defines the key for the blur contrast (xray mode only, 0-200, 100 = no change) */
+    public static final String KEY_BLUR_CONTRAST = "blur-contrast"; // Default: "blur-contrast"
+    public static final int IVALUE_BLUR_CONTRAST_MIN = 0;
+    public static final int IVALUE_BLUR_CONTRAST_MAX = 200;
+    public static final int DEFAULT_IVALUE_BLUR_CONTRAST = 100;
+
+    /** Defines the key for the blur saturation (xray mode only, 0-200, 100 = no change) */
+    public static final String KEY_BLUR_SATURATION = "blur-saturation"; // Default: "blur-saturation"
+    public static final int IVALUE_BLUR_SATURATION_MIN = 0;
+    public static final int IVALUE_BLUR_SATURATION_MAX = 200;
+    public static final int DEFAULT_IVALUE_BLUR_SATURATION = 100;
+
+    /** Defines the key for the blur brightness (xray mode only, 0-200, 100 = no change) */
+    public static final String KEY_BLUR_BRIGHTNESS = "blur-brightness"; // Default: "blur-brightness"
+    public static final int IVALUE_BLUR_BRIGHTNESS_MIN = 0;
+    public static final int IVALUE_BLUR_BRIGHTNESS_MAX = 200;
+    public static final int DEFAULT_IVALUE_BLUR_BRIGHTNESS = 100;
+
+    /** Defines the key for the blur noise overlay alpha (xray mode only, 0-100, 0 = off) */
+    public static final String KEY_BLUR_NOISE = "blur-noise"; // Default: "blur-noise"
+    public static final int IVALUE_BLUR_NOISE_MIN = 0;
+    public static final int IVALUE_BLUR_NOISE_MAX = 100;
+    public static final int DEFAULT_IVALUE_BLUR_NOISE = 0;
+
 
 
     /** Defines the key for the terminal transcript rows */
@@ -457,6 +481,10 @@ public final class TermuxPropertyConstants {
         KEY_TERMINAL_MARGIN_VERTICAL,
         KEY_BLUR_RADIUS,
         KEY_BLUR_PASSES,
+        KEY_BLUR_CONTRAST,
+        KEY_BLUR_SATURATION,
+        KEY_BLUR_BRIGHTNESS,
+        KEY_BLUR_NOISE,
         KEY_TERMINAL_TRANSCRIPT_ROWS,
 
         /* String */
